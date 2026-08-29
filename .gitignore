@@ -1,0 +1,49 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# === IDE ===
+.idea/
+.vscode/
+
+# === Training artifacts / model weights (exceed GitHub 100MB per-file limit) ===
+*.pth
+logs/RSTPReid/
+data/RSTPReid/
+data/RSTPReid.zip
+
+# === Intermediate output directory ===
+save_files/
+
+# === Images generated during debugging ===
+Detected_Persons.jpg
+annotated_image.jpg
+pack.png
+*.webp
+
+# === Debug / intermediate scripts (non-core code) ===
+boxplot.py
+bubble.py
+calculate_green.py
+check_IRRA.py
+check_old.py
+check_problog.py
+final.py
+final_run_this.py
+final_run_this_changed.py
+green.py
+logit.py
+lost.pl
+newchange.py
+test.py
+testvideo.py
+visualize.py
+web_this.py
+server.py
+判别两个文本的相似度.py
+发送.py
+文本列表与图像概率判断.py
+服务端.py
