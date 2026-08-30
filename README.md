@@ -2,6 +2,10 @@
 
 A real-time system that automatically detects likely lost elderly people from surveillance-camera images. It receives images over HTTP, detects each person, recognizes whether they are elderly and extracts their attributes with a CLIP-based cross-modal model (built on [IRRA](https://github.com/anosky/RSTP-Reid)), tracks them across frames, and reasons over multiple cues with probabilistic logic (ProbLog) to estimate a *lost* probability.
 
+## Core idea
+
+The lost decision is **not** produced by a large-data regression model. Instead, the system uses an **expertise-based reasoning model**: domain knowledge about when an elderly person is likely lost — slow pace, lingering, night-time — is encoded directly as interpretable probabilistic rules in ProbLog, while the visual understanding is handled zero-shot by a CLIP-based model that matches each person against text descriptions. This gives zero-shot learning at the lowest cost — no large-scale task-specific training is needed — and still reaches **~70% accuracy** on the targeted scenarios.
+
 ## Pipeline
 
 ```
