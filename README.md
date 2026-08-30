@@ -1,21 +1,47 @@
-# IRRA Text-to-Image Person Retrieval
+# Missing Elders Identification — Automatic Lost-Elderly Detection
 
-A text-to-image person re-identification (ReID) project built on CLIP, based on IRRA (Implicit Relation Reasoning and Aligning). It integrates YOLO person detection to deliver a full pipeline: camera stream → person detection → text-description retrieval.
+A real-time system that automatically detects likely lost elderly people from surveillance-camera images. It receives images over HTTP, detects each person, recognizes whether they are elderly and extracts their attributes with a CLIP-based cross-modal model (built on [IRRA](https://github.com/anosky/RSTP-Reid)), tracks them across frames, and reasons over multiple cues with probabilistic logic (ProbLog) to estimate a *lost* probability.
+
+## Pipeline
+
+```
+camera image ──> serve.py (FastAPI) ──> img_receive folder
+                                              │
+                        finally.py polls for new images
+                                              │
+              ┌───────────────────────────────┘
+              ▼
+   1. Person detection        YOLO (yolo11s.pt)
+   2. Elderly recognition     CLIP/IRRA text-image matching ("elderly person" vs "young person")
+   3. Attribute extraction    clothing / behavior / posture cues via text-image matching
+   4. Re-identification       feature similarity against previously seen elders
+   5. Probabilistic reasoning ProbLog combines speed, lingering time, night, alone → lost probability
+                                              │
+                              lost_p > 0.5 ──> flag & save to save_files/lost/
+```
 
 ## Core Files
 
 | File | Description |
 | --- | --- |
-| `finally.py` | Main program: YOLO person detection + IRRA text-image retrieval |
-| `serve.py` | FastAPI server that receives camera images and saves them |
+| `finally.py` | Main program: YOLO person detection → elderly/attribute recognition → tracking → ProbLog lost-risk reasoning |
+| `serve.py` | FastAPI server that receives camera images and saves them to the watched folder |
 | `receive_img.py` | Video frame extraction (video → image sequence at a given frame rate) |
-| `train.py` | Training entry point |
+| `train.py` | Training entry point for the IRRA (CLIP-based) backbone |
 | `run_this.py` | Interactive inference demo (text + image path → similarity) |
+
+## How the detection works
+
+1. **Person detection** — `check_image_information()` runs YOLO (`yolo11s.pt`) and crops every detected person (`class 0`), encoding each with the IRRA/CLIP model.
+2. **Elderly recognition** — `check_if_elder()` compares each person's feature against the text embeddings `"elderly person"` / `"young person"` (softmax, threshold `0.70`).
+3. **Attribute classification** — the model also scores a set of curated text descriptions (medical gown, wristband, backpack, clothing, posture such as sitting/walking/standing, abnormal behavior, night) against each person image.
+4. **Re-identification & tracking** — `check_if_appear()` matches the person against a running list of previously seen elders, tracking location, time, and speed across frames.
+5. **Lost-risk reasoning** — `calculate_lost()` writes a ProbLog program (`lost.pl`) with probabilistic rules over `time` (night), `weather`, `stay` (lingering), and `slow` (walking speed), then queries `e` to get the lost probability. If it exceeds `0.5`, the person is flagged and the image is saved to `save_files/lost/`.
 
 ## Directory Structure
 
 ```
-├── finally.py            # Main program (YOLO + IRRA)
+├── finally.py            # Main program (detection + reasoning)
 ├── serve.py              # FastAPI server
 ├── receive_img.py        # Video frame extraction
 ├── train.py              # Training entry point
@@ -36,10 +62,13 @@ A text-to-image person re-identification (ReID) project built on CLIP, based on 
 
 - Python 3.x, PyTorch (CUDA)
 - `ultralytics` (YOLO)
+- `problog` (probabilistic logic reasoning)
 - `fastapi`, `uvicorn` (server)
 - `torchvision`, `opencv-python`, `matplotlib`, `PIL`, `ftfy`, `regex`, etc.
 
 ## Training
+
+The IRRA (CLIP-based) backbone is trained on RSTPReid:
 
 ```bash
 python train.py --name baseline --dataset_name RSTPReid
@@ -50,11 +79,11 @@ Training outputs are written to `logs/RSTPReid/<timestamp>_<name>/`, including t
 ## Inference
 
 ```bash
-# Interactive demo
-python run_this.py
-
-# Main program (YOLO detection + retrieval)
+# Main program (automatic lost-elderly detection)
 python finally.py
+
+# FastAPI server that feeds images into the watched folder
+python serve.py
 ```
 
 `finally.py` loads the trained `configs.yaml` and `best.pth`; their paths are set via the `config_file` argument of `run_model()`.
