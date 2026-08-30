@@ -15,7 +15,7 @@ camera image ──> serve.py (FastAPI) ──> img_receive folder
    2. Elderly recognition     CLIP/IRRA text-image matching ("elderly person" vs "young person")
    3. Attribute extraction    clothing / behavior / posture cues via text-image matching
    4. Re-identification       feature similarity against previously seen elders
-   5. Probabilistic reasoning ProbLog combines speed, lingering time, night, alone → lost probability
+   5. Probabilistic reasoning ProbLog combines speed, lingering time, night → lost probability
                                               │
                               lost_p > 0.5 ──> flag & save to save_files/lost/
 ```
